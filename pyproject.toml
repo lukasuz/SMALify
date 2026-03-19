@@ -1,0 +1,32 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "SMALify"
+version = "1.0.0"
+requires-python = ">=3.7"
+dependencies = [
+    "numpy",
+    "torch",
+    "scipy",
+    "opencv-contrib-python",
+    "trimesh",
+]
+
+[tool.setuptools]
+packages = ["SMALify", "SMALify.smal_model"]
+
+[tool.setuptools.package-dir]
+"SMALify" = "."
+"SMALify.smal_model" = "smal_model"
+
+[tool.setuptools.package-data]
+SMALify = [
+    "data/SMALST/smpl_models/*.pkl",
+    "data/priors/*.pkl",
+    "data/priors/*.npz",
+    "data/priors/*.npy",
+    "smal_model/*.obj",
+    "smal_model/*.mtl",
+]

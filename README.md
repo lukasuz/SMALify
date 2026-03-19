@@ -1,3 +1,15 @@
+# Fork Notes
+Create a packages and exposes SMAL. 
+```bash
+uv pip install "git+https://github.com/lukasuz/SMALify.git"
+```
+
+
+```python
+from SMALify import SMAL
+smal = SMAL('cuda')
+```
+
 # SMALify
 
 <img src="docs/badja_result.gif">

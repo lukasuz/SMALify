@@ -1,7 +1,6 @@
 import os
 import pickle as pkl
 import numpy as np
-import config
 # from smal_model.smpl_webuser.serialization import load_model
 
 def align_smal_template_to_symmetry_axis(v, sym_file):
@@ -15,9 +14,7 @@ def align_smal_template_to_symmetry_axis(v, sym_file):
 
     # symIdx = pkl.load(open(sym_path))
     with open(sym_file, 'rb') as f:
-        u = pkl._Unpickler(f)
-        u.encoding = 'latin1'
-        symIdx = u.load()
+        symIdx = pkl.Unpickler(f, encoding='latin1').load()
 
     
     left = v[:, 1] < 0

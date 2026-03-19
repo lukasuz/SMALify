@@ -7,14 +7,38 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
+import os
 import numpy as np
 import torch
 from torch.autograd import Variable
-import pickle as pkl 
+import pickle as pkl
 from .batch_lbs import batch_rodrigues, batch_global_rigid_transformation
 from .smal_basics import align_smal_template_to_symmetry_axis #, get_smal_template
 import torch.nn as nn
-import config
+from .. import config
+
+
+class _ChumArray:
+    """Minimal stand-in for chumpy arrays when unpickling SMAL model files.
+    Chumpy stores its data in the 'x' key of __getstate__; we expose it as .r
+    so that undo_chumpy() continues to work unchanged.
+    Unknown attributes are delegated to the underlying numpy array so that
+    direct accesses like .shape still work without calling undo_chumpy first."""
+    def __setstate__(self, state):
+        self.r = np.array(state['x']) if isinstance(state, dict) and 'x' in state else np.array([])
+
+    def __getattr__(self, name):
+        return getattr(self.r, name)
+
+
+class _NoChumUnpickler(pkl.Unpickler):
+    """Unpickler that replaces every chumpy type with _ChumArray, removing
+    the runtime dependency on chumpy (and its broken numpy-alias imports)."""
+    def find_class(self, module, name):
+        if module.startswith('chumpy'):
+            return _ChumArray
+        return super().find_class(module, name)
+
 
 # There are chumpy variables so convert them to numpy.
 def undo_chumpy(x):
@@ -24,14 +48,17 @@ class SMAL(nn.Module):
     def __init__(self, device, shape_family_id=-1, dtype=torch.float):
         super(SMAL, self).__init__()
 
-        # -- Load SMPL params --
-        # with open(pkl_path, 'r') as f:
-        #     dd = pkl.load(f)
-           
+        if not os.path.exists(config.SMAL_FILE):
+            from .. import download as _dl
+            _dl.download_data()
+            config.data_path = config._find_data_dir()
+            config.SMAL_MODEL_PATH = os.path.join(config.data_path, 'SMALST', 'smpl_models')
+            config.SMAL_FILE = os.path.join(config.SMAL_MODEL_PATH, 'my_smpl_00781_4_all.pkl')
+            config.SMAL_DATA_FILE = os.path.join(config.SMAL_MODEL_PATH, 'my_smpl_data_00781_4_all.pkl')
+            config.SMAL_SYM_FILE = os.path.join(config.SMAL_MODEL_PATH, 'symIdx.pkl')
+
         with open(config.SMAL_FILE, 'rb') as f:
-            u = pkl._Unpickler(f)
-            u.encoding = 'latin1'
-            dd = u.load()
+            dd = _NoChumUnpickler(f, encoding='latin1').load()
 
         self.f = dd['f']
 
@@ -57,9 +84,7 @@ class SMAL(nn.Module):
 
         if shape_family_id != -1:
             with open(config.SMAL_DATA_FILE, 'rb') as f:
-                u = pkl._Unpickler(f)
-                u.encoding = 'latin1'
-                data = u.load()
+                data = _NoChumUnpickler(f, encoding='latin1').load()
 
             # Select mean shape for quadruped type
             betas = data['cluster_means'][shape_family_id]

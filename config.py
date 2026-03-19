@@ -4,9 +4,28 @@ import os
 import time
 
 # Define paths to each dataset
-data_path = "data"
-BADJA_PATH = "data/BADJA"
-STANFORD_EXTRA_PATH = "data/StanfordExtra"
+_PACKAGE_DIR = os.path.dirname(os.path.abspath(__file__))
+_CACHE_DIR = os.path.join(os.path.expanduser("~"), ".cache", "SMALify")
+
+
+def _find_data_dir():
+    """Return the data directory, searching in order:
+    1. Bundled with the installed package (pip install . with submodules pulled)
+    2. SMALIFY_DATA_DIR environment variable
+    3. ~/.cache/SMALify  (populated by SMALify.download_data())
+    """
+    pkg_data = os.path.join(_PACKAGE_DIR, "data")
+    if os.path.isdir(os.path.join(pkg_data, "SMALST", "smpl_models")):
+        return pkg_data
+    env_data = os.environ.get("SMALIFY_DATA_DIR")
+    if env_data and os.path.isdir(env_data):
+        return env_data
+    return _CACHE_DIR  # may not exist yet; clear error raised when file is opened
+
+
+data_path = _find_data_dir()
+BADJA_PATH = os.path.join(data_path, "BADJA")
+STANFORD_EXTRA_PATH = os.path.join(data_path, "StanfordExtra")
 OUTPUT_DIR = "checkpoints/{0}".format(time.strftime("%Y%m%d-%H%M%S"))
 
 CROP_SIZE = 256 
