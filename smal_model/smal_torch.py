@@ -119,9 +119,12 @@ class SMAL(nn.Module):
         self.weights = Variable(
             torch.Tensor(undo_chumpy(dd['weights'])),
             requires_grad=False).to(device)
+        
+        self.zero_theta = torch.zeros(1, 35, 3, device=device, dtype=torch.float)
+        self.zero_beta = torch.zeros(1, 20, device=device, dtype=torch.float)
 
 
-    def __call__(self, beta, theta, trans=None, del_v=None, betas_logscale=None, get_skin=True, v_template=None):
+    def __call__(self, theta, beta, trans=None, del_v=None, betas_logscale=None, get_skin=True, v_template=None):
 
         if True:
             nBetas = beta.shape[1]
